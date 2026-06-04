@@ -90,6 +90,20 @@ export default function Home() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, [entered]);
 
+  // Auto-scroll away from the storm section if viewed for more than 5 seconds
+  useEffect(() => {
+    if (!entered || activeSection !== "scene-storm") return;
+
+    const timer = setTimeout(() => {
+      const targetEl = document.getElementById("scene-letter");
+      if (targetEl) {
+        targetEl.scrollIntoView({ behavior: "smooth" });
+      }
+    }, 5000);
+
+    return () => clearTimeout(timer);
+  }, [activeSection, entered]);
+
   // Smooth volume fade-in handler (fades to target volume over ~450ms)
   const fadeInAudio = () => {
     if (!audioRef.current) return;

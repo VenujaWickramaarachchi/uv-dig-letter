@@ -35,8 +35,17 @@ export default function SmoothScroll({ children }: { children: React.ReactNode }
     // Disable GSAP lag smoothing to keep scroll animations in sync
     gsap.ticker.lagSmoothing(0);
 
+    // Listen to document body resizing to update Lenis boundaries
+    const resizeObserver = new ResizeObserver(() => {
+      lenis.resize();
+    });
+    if (document.body) {
+      resizeObserver.observe(document.body);
+    }
+
     return () => {
       gsap.ticker.remove(updateRaf);
+      resizeObserver.disconnect();
       lenis.destroy();
     };
   }, []);

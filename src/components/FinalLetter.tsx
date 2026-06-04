@@ -17,8 +17,8 @@ export default function FinalLetter({ onNextPage }: FinalLetterProps) {
     offset: ["start end", "end start"],
   });
 
-  const textOpacity = useTransform(scrollYProgress, [0.2, 0.4, 0.8, 0.95], [0, 1, 1, 0]);
-  const textY = useTransform(scrollYProgress, [0.2, 0.4, 0.8, 0.95], [30, 0, 0, -25]);
+  const textOpacity = useTransform(scrollYProgress, [0.2, 0.4], [0, 1]);
+  const textY = useTransform(scrollYProgress, [0.2, 0.4], [30, 0]);
 
   const handleTurnPage = () => {
     setIsFlipping(true);
