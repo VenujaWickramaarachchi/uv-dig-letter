@@ -22,29 +22,12 @@ const chapters: Chapter[] = [
   { id: "scene-final-letter", name: "To My Princess", shortName: "Final" },
 ];
 
-export default function CompassNavigation() {
+interface CompassNavigationProps {
+  activeChapter: string;
+}
+
+export default function CompassNavigation({ activeChapter }: CompassNavigationProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const [activeChapter, setActiveChapter] = useState("scene-intro");
-
-  // Keep track of which chapter is in view
-  useEffect(() => {
-    const handleScroll = () => {
-      const scrollPosition = window.scrollY + window.innerHeight / 3;
-
-      for (let i = chapters.length - 1; i >= 0; i--) {
-        const el = document.getElementById(chapters[i].id);
-        if (el && scrollPosition >= el.offsetTop) {
-          setActiveChapter(chapters[i].id);
-          break;
-        }
-      }
-    };
-
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    // Run once on mount
-    handleScroll();
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
 
   const activeIndex = chapters.findIndex((c) => c.id === activeChapter);
   // Needle points based on current chapter

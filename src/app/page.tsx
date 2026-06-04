@@ -22,9 +22,23 @@ import SceneChoice from "@/components/SceneChoice";
 import FinalLetter from "@/components/FinalLetter";
 import EndingMoment from "@/components/EndingMoment";
 
+const sceneAudioMap: Record<string, string> = {
+  "scene-intro": "/audio/background-music.mp3",
+  "scene-empty-kingdom": "/audio/empty-kingdom.mp3",
+  "scene-arrival": "/audio/arrival.mp3",
+  "scene-adventures": "/audio/adventures.mp3",
+  "scene-storm": "/audio/storm.mp3",
+  "scene-letter": "/audio/letter.mp3",
+  "scene-garden": "/audio/garden.mp3",
+  "scene-choice": "/audio/choice.mp3",
+  "scene-final-letter": "/audio/final-letter.mp3",
+};
+
 export default function Home() {
   const [entered, setEntered] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [activeSection, setActiveSection] = useState("scene-intro");
+  const activeSectionRef = useRef("scene-intro");
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   // Lock scroll on mount, unlock when entered
@@ -39,12 +53,47 @@ export default function Home() {
     };
   }, [entered]);
 
-  // Smooth volume fade-in handler
+  // Keep track of which chapter is in view to trigger visual compass updates and audio changes
+  useEffect(() => {
+    if (!entered) return;
+
+    const handleScroll = () => {
+      const scrollPosition = window.scrollY + window.innerHeight / 3;
+      const chapters = [
+        "scene-intro",
+        "scene-empty-kingdom",
+        "scene-arrival",
+        "scene-adventures",
+        "scene-storm",
+        "scene-letter",
+        "scene-garden",
+        "scene-choice",
+        "scene-final-letter",
+      ];
+
+      for (let i = chapters.length - 1; i >= 0; i--) {
+        const el = document.getElementById(chapters[i]);
+        if (el && scrollPosition >= el.offsetTop) {
+          if (activeSectionRef.current !== chapters[i]) {
+            activeSectionRef.current = chapters[i];
+            setActiveSection(chapters[i]);
+          }
+          break;
+        }
+      }
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    handleScroll();
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, [entered]);
+
+  // Smooth volume fade-in handler (fades to target volume over ~450ms)
   const fadeInAudio = () => {
     if (!audioRef.current) return;
     audioRef.current.volume = 0;
     let currentVol = 0;
-    const targetVol = 0.45; // comfortable background level
+    const targetVol = 0.45;
     
     const interval = setInterval(() => {
       if (!audioRef.current) {
@@ -58,8 +107,49 @@ export default function Home() {
       } else {
         audioRef.current.volume = currentVol;
       }
-    }, 150);
+    }, 50);
   };
+
+  // Crossfade audio whenever the activeSection changes
+  useEffect(() => {
+    if (!entered || !isPlaying || !audioRef.current) return;
+
+    const targetSrc = sceneAudioMap[activeSection] || "/audio/background-music.mp3";
+    const currentSrc = audioRef.current.src;
+
+    // Avoid switching if the source is already correct
+    if (currentSrc.endsWith(targetSrc)) {
+      return;
+    }
+
+    let currentVolume = audioRef.current.volume;
+    const fadeOutInterval = setInterval(() => {
+      if (!audioRef.current) {
+        clearInterval(fadeOutInterval);
+        return;
+      }
+
+      currentVolume -= 0.05;
+      if (currentVolume <= 0) {
+        audioRef.current.volume = 0;
+        clearInterval(fadeOutInterval);
+
+        // Load new source and play
+        audioRef.current.src = targetSrc;
+        audioRef.current.load();
+        audioRef.current
+          .play()
+          .then(() => fadeInAudio())
+          .catch((err) => {
+            console.error("Local audio playback failed:", err);
+          });
+      } else {
+        audioRef.current.volume = Math.max(0, currentVolume);
+      }
+    }, 50);
+
+    return () => clearInterval(fadeOutInterval);
+  }, [activeSection, entered, isPlaying]);
 
   const handleEnter = () => {
     setEntered(true);
@@ -72,7 +162,6 @@ export default function Home() {
         })
         .catch((err) => {
           console.warn("Audio autoplay blocked or failed:", err);
-          // Try playing again or keep it muted until explicit toggle
         });
     }
   };
@@ -83,6 +172,13 @@ export default function Home() {
         audioRef.current.pause();
         setIsPlaying(false);
       } else {
+        // Play the track matching the active section
+        const targetSrc = sceneAudioMap[activeSection] || "/audio/background-music.mp3";
+        if (!audioRef.current.src.endsWith(targetSrc)) {
+          audioRef.current.src = targetSrc;
+          audioRef.current.load();
+        }
+
         audioRef.current
           .play()
           .then(() => {
@@ -96,21 +192,9 @@ export default function Home() {
     }
   };
 
-  // Fallback to online romantic piano loop if the local placeholder audio is missing
+  // Fallback handler if initial loading fails
   const handleAudioError = () => {
-    console.warn("Local background music missing or failed. Using online royalty-free fallback.");
-    if (audioRef.current && audioRef.current.src !== "https://assets.mixkit.co/music/preview/mixkit-ambient-piano-loop-85.mp3") {
-      audioRef.current.src = "https://assets.mixkit.co/music/preview/mixkit-ambient-piano-loop-85.mp3";
-      if (entered) {
-        audioRef.current
-          .play()
-          .then(() => {
-            setIsPlaying(true);
-            fadeInAudio();
-          })
-          .catch((err) => console.log("Fallback audio play failed:", err));
-      }
-    }
+    console.error("Soundtrack file failed to load. Please make sure files exist in public/audio/.");
   };
 
   return (
@@ -163,7 +247,7 @@ export default function Home() {
           <MagicCanvas />
 
           {/* Compass Navigation Quick-travel */}
-          <CompassNavigation />
+          <CompassNavigation activeChapter={activeSection} />
 
           {/* Golden Sword Scroll Progress Bar */}
           <SwordProgressBar />

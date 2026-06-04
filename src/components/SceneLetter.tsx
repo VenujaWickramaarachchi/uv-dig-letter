@@ -27,7 +27,7 @@ export default function SceneLetter() {
     const progress = Math.max(0, Math.min(1, latest));
     const nextCount = Math.floor(progress * letterText.length);
     
-    if (nextCount !== visibleCount) {
+    if (nextCount > visibleCount) {
       setVisibleCount(nextCount);
       setIsWriting(true);
       
