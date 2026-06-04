@@ -1,10 +1,16 @@
 "use client";
 
-import { useRef } from "react";
+import { useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { motion, useScroll, useTransform } from "framer-motion";
 
-export default function FinalLetter() {
+interface FinalLetterProps {
+  onNextPage?: () => void;
+}
+
+export default function FinalLetter({ onNextPage }: FinalLetterProps) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const [isFlipping, setIsFlipping] = useState(false);
 
   const { scrollYProgress } = useScroll({
     target: containerRef,
@@ -14,11 +20,20 @@ export default function FinalLetter() {
   const textOpacity = useTransform(scrollYProgress, [0.2, 0.4, 0.8, 0.95], [0, 1, 1, 0]);
   const textY = useTransform(scrollYProgress, [0.2, 0.4, 0.8, 0.95], [30, 0, 0, -25]);
 
+  const handleTurnPage = () => {
+    setIsFlipping(true);
+    // Give the page turn flip animation time to finish before calling parent callback
+    setTimeout(() => {
+      if (onNextPage) onNextPage();
+      setIsFlipping(false); // reset state in case they scroll back up
+    }, 1400);
+  };
+
   return (
     <section
       id="scene-final-letter"
       ref={containerRef}
-      className="relative min-h-screen w-full flex flex-col justify-center items-center py-28 px-4 bg-gradient-to-b from-[#3a1b18] via-[#1b1424] to-[#04060d] overflow-hidden"
+      className="relative min-h-screen w-full flex flex-col justify-center items-center py-28 px-4 bg-gradient-to-b from-[#3a1b18] via-[#1b1424] to-[#04060d] overflow-hidden perspective-1500"
     >
       {/* Candle Light Glow overlay */}
       <div className="absolute top-[30%] left-[50%] -translate-x-1/2 -translate-y-1/2 w-[550px] h-[550px] bg-antique-gold/10 blur-[140px] rounded-full pointer-events-none animate-candle z-0" />
@@ -27,7 +42,15 @@ export default function FinalLetter() {
       {/* Parchment scroll */}
       <motion.div
         style={{ opacity: textOpacity, y: textY }}
-        className="relative w-full max-w-2xl mx-auto p-12 md:p-24 bg-[#faf4e6] text-stone-900 rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.6),_inset_0_0_30px_rgba(100,70,30,0.1)] border border-[#dcd3b8] z-10 overflow-hidden"
+        animate={isFlipping ? {
+          rotateY: -140,
+          x: -300,
+          scale: 0.8,
+          opacity: 0,
+          skewY: -10,
+        } : {}}
+        transition={{ duration: 1.4, ease: [0.25, 1, 0.5, 1] }}
+        className="relative w-full max-w-2xl mx-auto p-12 md:p-24 bg-[#faf4e6] text-stone-900 rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.6),_inset_0_0_30px_rgba(100,70,30,0.1)] border border-[#dcd3b8] z-10 overflow-hidden origin-left-center preserve-3d"
       >
         {/* Subtle paper grid lines */}
         <div className="absolute inset-0 bg-[radial-gradient(rgba(0,0,0,0.025)_1.5px,transparent_1.5px)] [background-size:24px_24px] pointer-events-none" />
@@ -73,6 +96,17 @@ export default function FinalLetter() {
             <span className="font-handwritten text-3xl md:text-4xl text-stone-900 mt-2 font-bold rotate-[-3deg] block">
               [YOUR NAME]
             </span>
+          </div>
+
+          {/* Glowing bouncing circular arrow button */}
+          <div className="mt-16 relative z-35 flex justify-center">
+            <button
+              onClick={handleTurnPage}
+              className="w-16 h-16 rounded-full border border-antique-gold/40 hover:border-antique-gold bg-antique-gold/10 hover:bg-antique-gold text-antique-gold hover:text-midnight-blue flex items-center justify-center shadow-[0_0_20px_rgba(212,175,55,0.2)] hover:shadow-[0_0_30px_rgba(212,175,55,0.5)] transition-all duration-300 animate-bounce cursor-pointer"
+              title="Proceed to the next chapter"
+            >
+              <span className="text-2xl font-bold">➔</span>
+            </button>
           </div>
 
         </div>

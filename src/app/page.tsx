@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import { Volume2, VolumeX } from "lucide-react";
 
@@ -35,6 +36,7 @@ const sceneAudioMap: Record<string, string> = {
 };
 
 export default function Home() {
+  const router = useRouter();
   const [entered, setEntered] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [activeSection, setActiveSection] = useState("scene-intro");
@@ -282,10 +284,7 @@ export default function Home() {
             <SceneChoice />
 
             {/* Scene 8: Final Letter Section */}
-            <FinalLetter />
-
-            {/* Outro/Credits Scene */}
-            <EndingMoment />
+            <FinalLetter onNextPage={() => router.push("/smile")} />
             
             {/* Footer */}
             <footer className="py-12 bg-[#04060d] border-t border-antique-gold/10 text-center text-rose-gold/30 text-xs font-serif font-light tracking-widest relative z-20">
